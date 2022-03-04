@@ -159,11 +159,11 @@ float HomographyEstimator::computeReprojectionError(const Eigen::Vector2f& pt1, 
 {
   // Todo 5: Compute the two-sided reprojection error.
   // Map points onto each other using the homography.
-  Eigen::Vector2f pt_1_in_2;
-  Eigen::Vector2f pt_2_in_1;
+  Eigen::Vector2f pt_1_in_2 = (H * pt1.homogeneous()).hnormalized();
+  Eigen::Vector2f pt_2_in_1 = (H_inv * pt2.homogeneous()).hnormalized();
 
   // Compute the two-sided reprojection error \epsilon_i.
-  return 2*distance_threshold_; // Remove this dummy result!
+  return (pt_1_in_2 - pt2).norm() + (pt_2_in_1 - pt1).norm(); // Remove this dummy result!
 }
 
 Eigen::Matrix2Xf HomographyEstimator::extractPoints(const Eigen::Matrix2Xf& pts, const PointSelection& selection) const

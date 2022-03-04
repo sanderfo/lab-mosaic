@@ -67,8 +67,12 @@ void runLabMosaic()
   // Todo 1: Experiment with blob and corner feature detectors.
   // Todo 3: Experiment with feature matching
   // Set up objects for detection, description and matching.
-  cv::Ptr<cv::Feature2D> detector = cv::ORB::create(1000);
-  cv::Ptr<cv::Feature2D> desc_extractor = cv::ORB::create();
+  //cv::Ptr<cv::Feature2D> detector = cv::ORB::create(1000);
+  //cv::Ptr<cv::Feature2D> desc_extractor = cv::ORB::create();
+
+
+  cv::Ptr<cv::Feature2D> detector = cv::SIFT::create(1000);
+  cv::Ptr<cv::Feature2D> desc_extractor = cv::SIFT::create();
   cv::BFMatcher matcher{desc_extractor->defaultNorm()};
 
   // Create homography estimator.
@@ -121,7 +125,7 @@ void runLabMosaic()
       start = Clock::now();
       desc_extractor->compute(gray_frame, frame_keypoints, frame_descriptors);
       matcher.knnMatch(frame_descriptors, ref_descriptors, matches, 2);
-      std::vector<cv::DMatch> good_matches = extractGoodRatioMatches(matches, 0.8f);
+      std::vector<cv::DMatch> good_matches = extractGoodRatioMatches(matches, 0.5f);
       end = Clock::now();
       DurationInMs feature_matching_duration = end - start;
 
@@ -148,15 +152,21 @@ void runLabMosaic()
 
         // Todo 7: Transform the reference image according to the similarity S, and insert into the mosaic.
         cv::Mat mosaic;
+        cv::warpPerspective(ref_image, mosaic, S_cv, ref_image.size());
 
         // Todo 8: Transform the current frame according to S and the computed homography.
         cv::Mat frame_warp;
+        cv::warpPerspective(frame, frame_warp, S_cv * H_cv, frame.size());
 
         // Todo 9: Compute a mask for the transformed current frame.
         cv::Mat mask = cv::Mat::ones(frame.size(), CV_8UC1);
         cv::Mat mask_warp;
+        cv::warpPerspective(mask, mask_warp, S_cv * H_cv, mask.size());
 
+        cv::erode(mask_warp, mask_warp, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
         //Todo 10: Insert the current frame into the mosaic.
+
+        frame_warp.copyTo(mosaic, mask_warp);
 
         // Draw estimation duration.
         drawEstimationDetails(vis_img, estimation_duration, estimate.num_inliers);
